@@ -128,112 +128,125 @@
     </div>
 
     <script src="https://unpkg.com/@zxing/library@latest"></script>
-    
+
     <script>
+
         const scannerContainer = document.getElementById('scanner-container');
-        const scannerVideo = document.getElementById('scanner-video');
-        const zoomSlider = document.getElementById('zoom-slider');
-        let videoWidth, videoHeight;
-        let containerWidth, containerHeight;
-    
-        // Function to handle successful scan results
-        function handleScanResult(result) {
-            console.log('Scanned QR Code:', result.text);
-            // Redirect to the scanned URL
-            window.location.href = result.text;
-        }
-    
-        // Function to handle errors during scanning
-        function handleScanError(error) {
-            alert('QR Code Scanning Error: ' + error);
-        }
-    
-        // Setup the QR code scanner
-        async function setupScanner() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                scannerVideo.srcObject = stream;
-                scannerVideo.onloadedmetadata = () => {
-                    // Store the original video dimensions
-                    videoWidth = scannerVideo.videoWidth;
-                    videoHeight = scannerVideo.videoHeight;
-                    // Set the initial transform origin to the center of the video frame
-                    scannerVideo.style.transformOrigin = 'center';
-                    // Update the container dimensions when the video dimensions change
-                    updateContainerDimensions();
-                };
-    
-                const codeReader = new ZXing.BrowserQRCodeReader();
-                codeReader.decodeFromVideoElement(scannerVideo, handleScanResult, handleScanError);
-            } catch (error) {
-                alert('Error accessing camera: ' + error);
-            }
-        }
-    
-        // Start the scanner
-        setupScanner();
-    
-        // Function to set the video zoom
-        function setZoom(zoomValue) {
-            scannerVideo.style.transform = `scale(${zoomValue})`;
-        }
-    
-        // Function to update the decoder region based on zoom level
-        function updateContainerDimensions() {
-            containerWidth = scannerContainer.offsetWidth;
-            containerHeight = scannerContainer.offsetHeight;
-        }
-    
-        // Update the decoder region when the video dimensions change
-        scannerVideo.addEventListener('resize', updateContainerDimensions);
-    
-        // Function to handle zooming with the range slider
-        zoomSlider.addEventListener('input', () => {
-            const zoomValue = zoomSlider.value;
-            setZoom(zoomValue);
+const scannerVideo = document.getElementById('scanner-video');
+const zoomSlider = document.getElementById('zoom-slider');
+let videoWidth, videoHeight;
+let containerWidth, containerHeight;
+
+// Function to handle successful scan results
+function handleScanResult(result) {
+    console.log('Scanned QR Code:', result.text);
+    // Redirect to the scanned URL
+    window.location.href = result.text;
+}
+
+// Function to handle errors during scanning
+function handleScanError(error) {
+    alert('QR Code Scanning Error: ' + error);
+}
+
+// Setup the QR code scanner
+async function setupScanner() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        scannerVideo.srcObject = stream;
+        scannerVideo.onloadedmetadata = () => {
+            // Store the original video dimensions
+            videoWidth = scannerVideo.videoWidth;
+            videoHeight = scannerVideo.videoHeight;
+            // Set the initial transform origin to the center of the video frame
+            scannerVideo.style.transformOrigin = 'center';
+            // Update the container dimensions when the video dimensions change
+            updateContainerDimensions();
+        };
+
+        const codeReader = new ZXing.BrowserQRCodeReader();
+        codeReader.decodeFromVideoElement(scannerVideo, handleScanResult, handleScanError);
+    } catch (error) {
+        alert('Error accessing camera: ' + error);
+    }
+}
+
+// Start the scanner
+setupScanner();
+
+// Function to set the video zoom
+function setZoom(zoomValue) {
+    scannerVideo.style.transform = `scale(${zoomValue})`;
+}
+
+// Function to update the decoder region based on zoom level
+function updateContainerDimensions() {
+    containerWidth = scannerContainer.offsetWidth;
+    containerHeight = scannerContainer.offsetHeight;
+}
+
+// Update the decoder region when the video dimensions change
+scannerVideo.addEventListener('resize', updateContainerDimensions);
+
+// Function to handle zooming with the range slider
+zoomSlider.addEventListener('input', () => {
+    const zoomValue = zoomSlider.value;
+    setZoom(zoomValue);
+});
+
+// Function to go back to the previous page
+function goBack() {
+    window.history.back();
+}
+
+// Function to capture and crop the video frame for scanning
+// Function to capture and crop the video frame for scanning
+function captureAndScan() {
+    const scannerCanvas = document.createElement('canvas');
+    scannerCanvas.width = videoWidth;
+    scannerCanvas.height = videoHeight;
+    const context = scannerCanvas.getContext('2d');
+    context.drawImage(scannerVideo, 0, 0, videoWidth, videoHeight);
+    const zoomValue = parseFloat(zoomSlider.value); // Parse zoomValue as float
+    const scaledWidth = videoWidth / zoomValue;
+    const scaledHeight = videoHeight / zoomValue;
+    const x = (videoWidth - scaledWidth) / 2;
+    const y = (videoHeight - scaledHeight) / 2;
+    const croppedImage = context.getImageData(x, y, scaledWidth, scaledHeight);
+
+    // Convert the cropped image to a data URL to pass to the decoder
+    const croppedCanvas = document.createElement('canvas');
+    croppedCanvas.width = scaledWidth;
+    croppedCanvas.height = scaledHeight;
+    const croppedContext = croppedCanvas.getContext('2d');
+    croppedContext.putImageData(croppedImage, 0, 0);
+    const croppedDataURL = croppedCanvas.toDataURL();
+
+    // Decode the QR code from the cropped image
+    const codeReader = new ZXing.BrowserQRCodeReader();
+    codeReader.decodeFromImageElement(croppedCanvas)
+        .then((result) => handleScanResult(result))
+        .catch((error) => {
+            // If no QR code is found, hide the previous result
+            qrDataContainer.textContent = 'QR Code data not fetched yet';
+            handleScanError(error);
         });
+}
 
-        // Function to go back to the previous page
-        function goBack() {
-            window.history.back();
-        }
 
-        // Function to capture and crop the video frame for scanning
-        function captureAndScan() {
-            const scannerCanvas = document.createElement('canvas');
-            scannerCanvas.width = videoWidth;
-            scannerCanvas.height = videoHeight;
-            const context = scannerCanvas.getContext('2d');
-            context.drawImage(scannerVideo, 0, 0, videoWidth, videoHeight);
-            const zoomValue = zoomSlider.value;
-            const scaledWidth = videoWidth / zoomValue;
-            const scaledHeight = videoHeight / zoomValue;
-            const x = (videoWidth - scaledWidth) / 2;
-            const y = (videoHeight - scaledHeight) / 2;
-            const croppedImage = context.getImageData(x, y, scaledWidth, scaledHeight);
+// Function to continuously scan for QR codes
+function startAutoScan() {
+    // Call the captureAndScan function repeatedly at an interval of 1 second
+    setInterval(captureAndScan, 1000);
+}
 
-            // Convert the cropped image to a data URL to pass to the decoder
-            const croppedCanvas = document.createElement('canvas');
-            croppedCanvas.width = scaledWidth;
-            croppedCanvas.height = scaledHeight;
-            const croppedContext = croppedCanvas.getContext('2d');
-            croppedContext.putImageData(croppedImage, 0, 0);
-            const croppedDataURL = croppedCanvas.toDataURL();
+// Start the auto scan
+startAutoScan();
 
-            // Decode the QR code from the cropped image
-            const codeReader = new ZXing.BrowserQRCodeReader();
-            codeReader.decodeFromImageElement(croppedCanvas, handleScanResult, handleScanError);
-        }
 
-        // Function to continuously scan for QR codes
-        function startAutoScan() {
-            // Call the captureAndScan function repeatedly at an interval of 1 second
-            setInterval(captureAndScan, 1000);
-        }
-
-        // Start the auto scan
-        startAutoScan();
     </script>
+
+
 </body>
 
 </html>
