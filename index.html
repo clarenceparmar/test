@@ -30,18 +30,18 @@
         }
 
         #scanner-video-container {
-            position: relative; /* Added for positioning the green line */
+            position: relative;
             width: 90%;
             max-width: 400px;
             border: 1px solid #ccc;
-            overflow: hidden; /* Added to hide the overflowing content when zooming */
+            overflow: hidden;
         }
 
         #scanner-video {
             width: 100%;
             height: auto;
-            transition: transform 0.2s ease; /* Added for smooth zoom transition */
-            transform-origin: center; /* Set the initial transform origin to the center */
+            transition: transform 0.2s ease;
+            transform-origin: center;
         }
 
         /* Green line animation */
@@ -84,9 +84,9 @@
             color: #fff;
             border: none;
             border-radius: 5px;
-            user-select: none; /* Prevent text selection */
-            touch-action: none; /* Disable touch actions */
-            transform: translateY(0); /* Initial position for dragging */
+            user-select: none;
+            touch-action: none;
+            transform: translateY(0);
         }
 
         .zoom-slider {
@@ -94,24 +94,37 @@
             margin-top: 10px;
         }
 
+        #qr-data-container {
+            margin-top: 10px;
+        }
+
+        h1 {
+            position: relative;
+        }
+
     </style>
+
 </head>
 
 <body>
+
     <div id="scanner-container">
+        <!-- Add the Back Button -->
+        <button onclick="goBack()">Back</button>
+        
         <h2>Scan QR Code</h2>
+
         <div id="scanner-video-container">
             <video id="scanner-video"></video>
             <div id="green-line"></div>
         </div>
 
-        <!-- <div class="zoom-buttons">
-            <button class="zoom-btn" id="zoom-in-btn" onmousedown="startZoom('in')" onmouseup="endZoom()">Zoom In</button>
-            <button class="zoom-btn" id="zoom-out-btn" onmousedown="startZoom('out')" onmouseup="endZoom()">Zoom Out</button>
-        </div> -->
-
         <input type="range" class="zoom-slider" id="zoom-slider" min="1" max="3" step="0.1" value="1">
 
+        <!-- Container to display scanned QR code data -->
+        <div id="qr-data-container">
+            QR Code data not fetched yet
+        </div>
     </div>
 
     <script src="https://unpkg.com/@zxing/library@latest"></script>
@@ -122,18 +135,19 @@
         const zoomSlider = document.getElementById('zoom-slider');
         let videoWidth, videoHeight;
         let containerWidth, containerHeight;
-
+    
         // Function to handle successful scan results
         function handleScanResult(result) {
+            console.log('Scanned QR Code:', result.text);
             // Redirect to the scanned URL
             window.location.href = result.text;
         }
-
+    
         // Function to handle errors during scanning
         function handleScanError(error) {
             alert('QR Code Scanning Error: ' + error);
         }
-
+    
         // Setup the QR code scanner
         async function setupScanner() {
             try {
@@ -148,38 +162,78 @@
                     // Update the container dimensions when the video dimensions change
                     updateContainerDimensions();
                 };
-
+    
                 const codeReader = new ZXing.BrowserQRCodeReader();
                 codeReader.decodeFromVideoElement(scannerVideo, handleScanResult, handleScanError);
             } catch (error) {
                 alert('Error accessing camera: ' + error);
             }
         }
-
+    
         // Start the scanner
         setupScanner();
-
+    
         // Function to set the video zoom
         function setZoom(zoomValue) {
             scannerVideo.style.transform = `scale(${zoomValue})`;
         }
-
+    
         // Function to update the decoder region based on zoom level
         function updateContainerDimensions() {
-            containerWidth = scannerVideoContainer.offsetWidth;
-            containerHeight = scannerVideoContainer.offsetHeight;
+            containerWidth = scannerContainer.offsetWidth;
+            containerHeight = scannerContainer.offsetHeight;
         }
-
+    
         // Update the decoder region when the video dimensions change
         scannerVideo.addEventListener('resize', updateContainerDimensions);
-
+    
         // Function to handle zooming with the range slider
         zoomSlider.addEventListener('input', () => {
             const zoomValue = zoomSlider.value;
             setZoom(zoomValue);
         });
-    </script>
 
+        // Function to go back to the previous page
+        function goBack() {
+            window.history.back();
+        }
+
+        // Function to capture and crop the video frame for scanning
+        function captureAndScan() {
+            const scannerCanvas = document.createElement('canvas');
+            scannerCanvas.width = videoWidth;
+            scannerCanvas.height = videoHeight;
+            const context = scannerCanvas.getContext('2d');
+            context.drawImage(scannerVideo, 0, 0, videoWidth, videoHeight);
+            const zoomValue = zoomSlider.value;
+            const scaledWidth = videoWidth / zoomValue;
+            const scaledHeight = videoHeight / zoomValue;
+            const x = (videoWidth - scaledWidth) / 2;
+            const y = (videoHeight - scaledHeight) / 2;
+            const croppedImage = context.getImageData(x, y, scaledWidth, scaledHeight);
+
+            // Convert the cropped image to a data URL to pass to the decoder
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = scaledWidth;
+            croppedCanvas.height = scaledHeight;
+            const croppedContext = croppedCanvas.getContext('2d');
+            croppedContext.putImageData(croppedImage, 0, 0);
+            const croppedDataURL = croppedCanvas.toDataURL();
+
+            // Decode the QR code from the cropped image
+            const codeReader = new ZXing.BrowserQRCodeReader();
+            codeReader.decodeFromImageElement(croppedCanvas, handleScanResult, handleScanError);
+        }
+
+        // Function to continuously scan for QR codes
+        function startAutoScan() {
+            // Call the captureAndScan function repeatedly at an interval of 1 second
+            setInterval(captureAndScan, 1000);
+        }
+
+        // Start the auto scan
+        startAutoScan();
+    </script>
 </body>
 
 </html>
