@@ -51,8 +51,8 @@
 
         // Function to handle successful scan results
         function handleScanResult(result) {
-            alert('QR Code Scanned: ' + result.text);
-            // Do something with the scanned data, e.g., display it, submit a form, etc.
+            // Redirect to the scanned URL
+            window.location.href = result.text;
         }
 
         // Function to handle errors during scanning
