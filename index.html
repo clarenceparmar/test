@@ -1,252 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Scanner App</title>
-
+    <meta name="viewport" content="width=, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        #preview {
+            width: 500px;
+            height: 500px;
+            margin: 0px auto;
         }
-
-        #scanner-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #ffffff;
-            border: 1px solid #ccc;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        #scanner-video-container {
-            position: relative;
-            width: 90%;
-            max-width: 400px;
-            border: 1px solid #ccc;
-            overflow: hidden;
-        }
-
-        #scanner-video {
-            width: 100%;
-            height: auto;
-            transition: transform 0.2s ease;
-            transform-origin: center;
-        }
-
-        /* Green line animation */
-        #green-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background-color: #4CAF50;
-            animation: moveUpAndDown 2s linear infinite;
-            z-index: 999999;
-        }
-
-        @keyframes moveUpAndDown {
-            0% {
-                top: 0;
-            }
-            50% {
-                top: calc(100% - 3px);
-            }
-            100% {
-                top: 0;
-            }
-        }
-
-        /* Zoom buttons */
-        .zoom-buttons {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .zoom-btn {
-            padding: 10px;
-            font-size: 20px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            user-select: none;
-            touch-action: none;
-            transform: translateY(0);
-        }
-
-        .zoom-slider {
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        #qr-data-container {
-            margin-top: 10px;
-        }
-
-        h1 {
-            position: relative;
-        }
-
     </style>
 
-</head>
+    <video id="preview"></video>
 
-<body>
+    <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
 
-    <div id="scanner-container">
-        <!-- Add the Back Button -->
-        <button onclick="goBack()">Clarence99</button>
-        
-        <h2>Scan QR Code</h2>
-
-        <div id="scanner-video-container">
-            <video id="scanner-video"></video>
-            <div id="green-line"></div>
-        </div>
-
-        <input type="range" class="zoom-slider" id="zoom-slider" min="1" max="3" step="0.1" value="1">
-
-        <!-- Container to display scanned QR code data -->
-        <div id="qr-data-container">
-            QR Code data not fetched yet
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/@zxing/library@latest"></script>
-
-    <script>
-
-        const scannerContainer = document.getElementById('scanner-container');
-const scannerVideo = document.getElementById('scanner-video');
-const zoomSlider = document.getElementById('zoom-slider');
-let videoWidth, videoHeight;
-let containerWidth, containerHeight;
-
-// Function to handle successful scan results
-function handleScanResult(result) {
-    console.log('Scanned QR Code:', result.text);
-    // Redirect to the scanned URL
-    window.location.href = result.text;
-}
-
-// Function to handle errors during scanning
-function handleScanError(error) {
-    alert('QR Code Scanning Error: ' + error);
-}
-
-// Setup the QR code scanner
-async function setupScanner() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        scannerVideo.srcObject = stream;
-        scannerVideo.onloadedmetadata = () => {
-            // Store the original video dimensions
-            videoWidth = scannerVideo.videoWidth;
-            videoHeight = scannerVideo.videoHeight;
-            // Set the initial transform origin to the center of the video frame
-            scannerVideo.style.transformOrigin = 'center';
-            // Update the container dimensions when the video dimensions change
-            updateContainerDimensions();
-        };
-
-        const codeReader = new ZXing.BrowserQRCodeReader();
-        codeReader.decodeFromVideoElement(scannerVideo, handleScanResult, handleScanError);
-    } catch (error) {
-        alert('Error accessing camera: ' + error);
-    }
-}
-
-// Start the scanner
-setupScanner();
-
-// Function to set the video zoom
-function setZoom(zoomValue) {
-    scannerVideo.style.transform = `scale(${zoomValue})`;
-}
-
-// Function to update the decoder region based on zoom level
-function updateContainerDimensions() {
-    containerWidth = scannerContainer.offsetWidth;
-    containerHeight = scannerContainer.offsetHeight;
-}
-
-// Update the decoder region when the video dimensions change
-scannerVideo.addEventListener('resize', updateContainerDimensions);
-
-// Function to handle zooming with the range slider
-zoomSlider.addEventListener('input', () => {
-    const zoomValue = zoomSlider.value;
-    setZoom(zoomValue);
-});
-
-// Function to go back to the previous page
-function goBack() {
-    window.history.back();
-}
-
-// Function to capture and crop the video frame for scanning
-function captureAndScan() {
-    const scannerCanvas = document.createElement('canvas');
-    scannerCanvas.width = videoWidth;
-    scannerCanvas.height = videoHeight;
-    const context = scannerCanvas.getContext('2d');
-    context.drawImage(scannerVideo, 0, 0, videoWidth, videoHeight);
-    const zoomValue = parseFloat(zoomSlider.value); // Parse zoomValue as float
-    const scaledWidth = Math.floor(videoWidth / zoomValue); // Convert to integer
-    const scaledHeight = Math.floor(videoHeight / zoomValue); // Convert to integer
-    const x = Math.floor((videoWidth - scaledWidth) / 2); // Convert to integer
-    const y = Math.floor((videoHeight - scaledHeight) / 2); // Convert to integer
-    const croppedImage = context.getImageData(x, y, scaledWidth, scaledHeight);
-
-    // Convert the cropped image to a data URL to pass to the decoder
-    const croppedCanvas = document.createElement('canvas');
-    croppedCanvas.width = scaledWidth;
-    croppedCanvas.height = scaledHeight;
-    const croppedContext = croppedCanvas.getContext('2d');
-    croppedContext.putImageData(croppedImage, 0, 0);
-    const croppedDataURL = croppedCanvas.toDataURL();
-
-    // Decode the QR code from the cropped image
-    const codeReader = new ZXing.BrowserQRCodeReader();
-    codeReader.decodeFromImageElement(croppedCanvas)
-        .then((result) => handleScanResult(result))
-        .catch((error) => {
-            // If no QR code is found, hide the previous result
-            qrDataContainer.textContent = 'QR Code data not fetched yet';
-            handleScanError(error);
+    <script type="text/javascript">
+        var scanner = new Instascan.Scanner({ video: document.getElementById('preview'), scanPeriod: 5, mirror: false });
+        scanner.addListener('scan', function(content) {
+            alert(content);
+            //window.location.href=content;
         });
-}
 
-
-
-// Function to continuously scan for QR codes
-function startAutoScan() {
-    // Call the captureAndScan function repeatedly at an interval of 1 second
-    setInterval(captureAndScan, 1000);
-}
-
-// Start the auto scan
-startAutoScan();
-
-
+        Instascan.Camera.getCameras().then(function(cameras) {
+            if (cameras.length > 0) {
+                // Find the default camera (usually the first one) and start the scanner
+                var defaultCamera = cameras[4];
+                scanner.start(defaultCamera);
+            } else {
+                console.error('No cameras found.');
+                alert('No cameras found.');
+            }
+        }).catch(function(e) {
+            console.error(e);
+            alert(e);
+        });
     </script>
-
-
 </body>
-
 </html>
