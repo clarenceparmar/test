@@ -34,12 +34,14 @@
             width: 90%;
             max-width: 400px;
             border: 1px solid #ccc;
+            overflow: hidden; /* Added to hide the overflowing content when zooming */
         }
 
         #scanner-video {
             width: 100%;
             height: auto;
             transition: transform 0.2s ease; /* Added for smooth zoom transition */
+            transform-origin: center; /* Set the initial transform origin to the center */
         }
 
         /* Green line animation */
@@ -96,19 +98,22 @@
             <video id="scanner-video"></video>
             <div id="green-line"></div>
         </div>
-        
+
         <div class="zoom-buttons">
-            <button class="zoom-btn" id="zoom-in-btn" onmousedown="startZoom('in')" onmouseup="endZoom()">+</button>
-            <button class="zoom-btn" id="zoom-out-btn" onmousedown="startZoom('out')" onmouseup="endZoom()">-</button>
+            <button class="zoom-btn" id="zoom-in-btn" onmousedown="startZoom('in')" onmouseup="endZoom()">Zoom In</button>
+            <button class="zoom-btn" id="zoom-out-btn" onmousedown="startZoom('out')" onmouseup="endZoom()">Zoom Out</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/@zxing/library@latest"></script>
+    
     <script>
         const scannerContainer = document.getElementById('scanner-container');
         const scannerVideo = document.getElementById('scanner-video');
         let currentZoom = 1;
         let zoomInterval;
+        let videoWidth, videoHeight;
+        let containerWidth, containerHeight;
 
         // Function to handle successful scan results
         function handleScanResult(result) {
@@ -126,6 +131,15 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 scannerVideo.srcObject = stream;
+                scannerVideo.onloadedmetadata = () => {
+                    // Store the original video dimensions
+                    videoWidth = scannerVideo.videoWidth;
+                    videoHeight = scannerVideo.videoHeight;
+                    // Set the initial transform origin to the center of the video frame
+                    scannerVideo.style.transformOrigin = 'center';
+                    // Update the container dimensions when the video dimensions change
+                    updateContainerDimensions();
+                };
 
                 const codeReader = new ZXing.BrowserQRCodeReader();
                 codeReader.decodeFromVideoElement(scannerVideo, handleScanResult, handleScanError);
@@ -140,7 +154,7 @@
         // Function to handle zoom in
         function zoomIn() {
             if (currentZoom < 3) {
-                currentZoom += 0.1;
+                currentZoom += 0.2; // Increase the zoom step to 0.2
                 setZoom(currentZoom);
             }
         }
@@ -169,7 +183,17 @@
         function endZoom() {
             clearInterval(zoomInterval);
         }
+
+        // Function to update the decoder region based on zoom level
+        function updateContainerDimensions() {
+            containerWidth = scannerVideoContainer.offsetWidth;
+            containerHeight = scannerVideoContainer.offsetHeight;
+        }
+
+        // Update the decoder region when the video dimensions change
+        scannerVideo.addEventListener('resize', updateContainerDimensions);
     </script>
+
 </body>
 
 </html>
