@@ -110,7 +110,7 @@
 
     <div id="scanner-container">
         <!-- Add the Back Button -->
-        <button onclick="goBack()">Clarence</button>
+        <button onclick="goBack()">Back</button>
         
         <h2>Scan QR Code</h2>
 
@@ -200,7 +200,6 @@ function goBack() {
 }
 
 // Function to capture and crop the video frame for scanning
-// Function to capture and crop the video frame for scanning
 function captureAndScan() {
     const scannerCanvas = document.createElement('canvas');
     scannerCanvas.width = videoWidth;
@@ -208,10 +207,10 @@ function captureAndScan() {
     const context = scannerCanvas.getContext('2d');
     context.drawImage(scannerVideo, 0, 0, videoWidth, videoHeight);
     const zoomValue = parseFloat(zoomSlider.value); // Parse zoomValue as float
-    const scaledWidth = videoWidth / zoomValue;
-    const scaledHeight = videoHeight / zoomValue;
-    const x = (videoWidth - scaledWidth) / 2;
-    const y = (videoHeight - scaledHeight) / 2;
+    const scaledWidth = Math.floor(videoWidth / zoomValue); // Convert to integer
+    const scaledHeight = Math.floor(videoHeight / zoomValue); // Convert to integer
+    const x = Math.floor((videoWidth - scaledWidth) / 2); // Convert to integer
+    const y = Math.floor((videoHeight - scaledHeight) / 2); // Convert to integer
     const croppedImage = context.getImageData(x, y, scaledWidth, scaledHeight);
 
     // Convert the cropped image to a data URL to pass to the decoder
@@ -232,6 +231,7 @@ function captureAndScan() {
             handleScanError(error);
         });
 }
+
 
 
 // Function to continuously scan for QR codes
