@@ -88,6 +88,12 @@
             touch-action: none; /* Disable touch actions */
             transform: translateY(0); /* Initial position for dragging */
         }
+
+        .zoom-slider {
+            width: 100%;
+            margin-top: 10px;
+        }
+
     </style>
 </head>
 
@@ -99,10 +105,13 @@
             <div id="green-line"></div>
         </div>
 
-        <div class="zoom-buttons">
-            <button class="zoom-btn" id="zoom-in-btn" onmousedown="startZoom('in')" onmouseup="endZoom()"></button>
-            <button class="zoom-btn" id="zoom-out-btn" onmousedown="startZoom('out')" onmouseup="endZoom()"></button>
-        </div>
+        <!-- <div class="zoom-buttons">
+            <button class="zoom-btn" id="zoom-in-btn" onmousedown="startZoom('in')" onmouseup="endZoom()">Zoom In</button>
+            <button class="zoom-btn" id="zoom-out-btn" onmousedown="startZoom('out')" onmouseup="endZoom()">Zoom Out</button>
+        </div> -->
+
+        <input type="range" class="zoom-slider" id="zoom-slider" min="1" max="3" step="0.1" value="1">
+
     </div>
 
     <script src="https://unpkg.com/@zxing/library@latest"></script>
@@ -110,8 +119,7 @@
     <script>
         const scannerContainer = document.getElementById('scanner-container');
         const scannerVideo = document.getElementById('scanner-video');
-        let currentZoom = 1;
-        let zoomInterval;
+        const zoomSlider = document.getElementById('zoom-slider');
         let videoWidth, videoHeight;
         let containerWidth, containerHeight;
 
@@ -151,37 +159,9 @@
         // Start the scanner
         setupScanner();
 
-        // Function to handle zoom in
-        function zoomIn() {
-            if (currentZoom < 3) {
-                currentZoom += 0.2; // Increase the zoom step to 0.2
-                setZoom(currentZoom);
-            }
-        }
-
-        // Function to handle zoom out
-        function zoomOut() {
-            if (currentZoom > 1) {
-                currentZoom -= 0.1;
-                setZoom(currentZoom);
-            }
-        }
-
         // Function to set the video zoom
         function setZoom(zoomValue) {
             scannerVideo.style.transform = `scale(${zoomValue})`;
-        }
-
-        // Function to start zooming when button is held down
-        function startZoom(direction) {
-            zoomInterval = setInterval(() => {
-                direction === 'in' ? zoomIn() : zoomOut();
-            }, 100);
-        }
-
-        // Function to stop zooming when button is released
-        function endZoom() {
-            clearInterval(zoomInterval);
         }
 
         // Function to update the decoder region based on zoom level
@@ -192,6 +172,12 @@
 
         // Update the decoder region when the video dimensions change
         scannerVideo.addEventListener('resize', updateContainerDimensions);
+
+        // Function to handle zooming with the range slider
+        zoomSlider.addEventListener('input', () => {
+            const zoomValue = zoomSlider.value;
+            setZoom(zoomValue);
+        });
     </script>
 
 </body>
